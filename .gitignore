@@ -26,3 +26,8 @@ dist-ssr
 .env
 .env.*
 !.env.example
+
+# Local database, sessions and product uploads
+backend/var/*
+!backend/var/.gitkeep
+backend/public/uploads/
