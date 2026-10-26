@@ -98,10 +98,13 @@ class API(unittest.TestCase):
 
     def test_authentication_csrf_and_logout(self):
         self.assertEqual(self.request('/products')[0], 401)
+        self.assertEqual(self.request('/unknown')[0], 401)
         self.assertEqual(self.request('/login', 'POST', {'email': 'test@example.test', 'password': self.password}, csrf=False)[0], 403)
         old = self.csrf
         self.login()
         self.assertNotEqual(old, self.csrf)
+        self.assertEqual(self.request('/unknown')[0], 404)
+        self.assertEqual(self.request('/products/999999', 'DELETE')[0], 404)
         self.assertEqual(self.request('/session')[1]['admin']['email'], 'test@example.test')
         self.assertEqual(self.request('/sizes', 'POST', {'label': 'Unauthorized'}, csrf=False)[0], 403)
         self.assertEqual(self.request('/logout', 'POST')[0], 200)
@@ -157,6 +160,26 @@ class API(unittest.TestCase):
         product = {'p_id': 'BAD-IMAGE', 'name': 'Test', 'price': '20', 'variants': [{'color_id': options['colors'][0]['id'], 'size_id': options['sizes'][0]['id'], 'quantity': 1}], 'photos': [{'key': 'new:0', 'color_id': None}]}
         status, _, _ = self.request('/products', 'POST', multipart=[('product', json.dumps(product).encode(), None), ('photos[]', b'<?php echo "bad";', 'fake.png')])
         self.assertEqual(status, 422)
+
+    def test_upload_is_removed_when_database_write_fails(self):
+        self.login()
+        options = self.request('/options')[1]
+        before = set((ROOT / 'public/uploads').glob('*'))
+        trigger = (
+            "CREATE TRIGGER reject_test_photo BEFORE INSERT ON photos FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Intentional test failure'"
+            if self.mysql else
+            "CREATE TRIGGER reject_test_photo BEFORE INSERT ON photos BEGIN SELECT RAISE(ABORT, 'Intentional test failure'); END"
+        )
+        self.sql(trigger)
+        try:
+            product = {'p_id': 'ROLLBACK-TEST', 'name': 'Rollback test', 'price': '20', 'variants': [{'color_id': options['colors'][0]['id'], 'size_id': options['sizes'][0]['id'], 'quantity': 1}], 'photos': [{'key': 'new:0', 'color_id': None}]}
+            status, _, _ = self.request('/products', 'POST', multipart=[('product', json.dumps(product).encode(), None), ('photos[]', IMAGE, 'photo.png')])
+            # SQLite reports this as an integrity conflict; MariaDB uses a general SQL error.
+            self.assertEqual(status, 500 if self.mysql else 409)
+            self.assertEqual(self.request('/products')[1]['products'], [])
+            self.assertEqual(set((ROOT / 'public/uploads').glob('*')), before)
+        finally:
+            self.sql('DROP TRIGGER reject_test_photo')
 
     def test_rate_limit(self):
         for _ in range(5):

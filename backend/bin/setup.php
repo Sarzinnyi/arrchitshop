@@ -1,6 +1,9 @@
 <?php
 declare(strict_types=1);
 require __DIR__ . "/../bootstrap.php";
+use App\Models\Admin;
+use App\Models\Size;
+use App\Models\Color;
 umask(0077);
 if (PHP_SAPI !== "cli") {
     exit(1);
@@ -12,8 +15,8 @@ if (!in_array($driver, ["sqlite", "mysql"], true)) {
 }
 db()->exec(file_get_contents(__DIR__ . "/../database/schema.$driver.sql"));
 foreach (["S", "M", "L", "28", "29", "30"] as $label) {
-    if (!query("SELECT id FROM sizes WHERE label=?", [$label])->fetch()) {
-        query("INSERT INTO sizes(label) VALUES (?)", [$label]);
+    if (!Size::byLabel($label)) {
+        Size::create($label);
     }
 }
 foreach (
@@ -26,8 +29,8 @@ foreach (
     ]
     as $c
 ) {
-    if (!query("SELECT id FROM colors WHERE name=?", [$c[0]])->fetch()) {
-        query("INSERT INTO colors(name,hex) VALUES (?,?)", $c);
+    if (!Color::byName($c[0])) {
+        Color::create($c[0], $c[1]);
     }
 }
 echo "Database schema and default options are ready.\n";
@@ -45,14 +48,10 @@ if (in_array("--create-admin", $argv, true)) {
             "Set ADMIN_EMAIL and ADMIN_PASSWORD (12–72 bytes).",
         );
     }
-    if (query("SELECT id FROM admins WHERE email=?", [$email])->fetch()) {
+    if (Admin::byEmail($email)) {
         echo "Admin already exists; password left unchanged.\n";
         exit();
     }
-    query("INSERT INTO admins(email,name,password_hash) VALUES (?,?,?)", [
-        $email,
-        $name,
-        password_hash($password, PASSWORD_DEFAULT),
-    ]);
+    Admin::create($email, $name, password_hash($password, PASSWORD_DEFAULT));
     echo "Admin created.\n";
 }

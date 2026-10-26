@@ -14,6 +14,27 @@ A clothing inventory admin built with React + TypeScript + Vite and a PHP 8.4 JS
 
 Prices are displayed in USD and stored as decimal values. New installs start with an empty product collection, not pretend inventory.
 
+## MVC organization
+
+The PHP API uses an MVC-style structure; the Vite/React frontend in `src/` is the view layer. PHP controllers return JSON rather than rendering PHP templates.
+
+```text
+backend/
+  public/index.php            # Front controller: bootstrap, dispatch, errors
+  routes/api.php              # API routes and authentication requirements
+  app/
+    Controllers/              # Auth, products, and size/color HTTP actions
+    Models/                   # Admin, product, size, color, rate-limit SQL
+    Services/                 # Sessions/CSRF, rate limits, validation, uploads
+    Core/                     # Database connection, router, HTTP helpers
+  config/database.php         # Environment-based connection configuration
+  database/                   # MySQL and SQLite schemas
+  bin/setup.php               # Schema, defaults, and admin creation
+  tests/integration.py        # HTTP integration tests
+```
+
+A request flows from `public/index.php` through `routes/api.php` to a controller. Controllers call models and services, then return JSON for React to render. Product writes coordinate a database transaction with photo storage; failed writes roll back data and remove new files. Uploaded images are served by `PhotoService` before API session handling. No database migration or frontend API changes are needed for this refactor.
+
 ## Development
 
 Requirements: Node 22.12+ (Node 24 recommended), npm, PHP 8.4 with PDO, `pdo_sqlite` (or `pdo_mysql`), mbstring, session, and image metadata support (`getimagesize`). No Composer install is needed by the new API.
