@@ -4,5 +4,20 @@ CREATE TABLE IF NOT EXISTS login_limits (bucket VARCHAR(64) PRIMARY KEY, attempt
 CREATE TABLE IF NOT EXISTS sizes (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, label VARCHAR(32) NOT NULL UNIQUE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE IF NOT EXISTS colors (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, name VARCHAR(60) NOT NULL UNIQUE, hex CHAR(7) NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE IF NOT EXISTS products (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, p_id VARCHAR(64) NOT NULL UNIQUE, name VARCHAR(160) NOT NULL, description TEXT NOT NULL, price DECIMAL(12,2) NOT NULL, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-CREATE TABLE IF NOT EXISTS variants (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, product_id INT UNSIGNED NOT NULL, color_id INT UNSIGNED NOT NULL, size_id INT UNSIGNED NOT NULL, quantity INT NOT NULL DEFAULT 0 CHECK(quantity >= 0), UNIQUE KEY product_color_size(product_id,color_id,size_id), FOREIGN KEY(product_id) REFERENCES products(id) ON DELETE CASCADE, FOREIGN KEY(color_id) REFERENCES colors(id), FOREIGN KEY(size_id) REFERENCES sizes(id)) ENGINE=InnoDB;
+-- Unsigned stock avoids inline CHECK syntax that older import analyzers reject.
+CREATE TABLE IF NOT EXISTS `variants` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `product_id` INT UNSIGNED NOT NULL,
+    `color_id` INT UNSIGNED NOT NULL,
+    `size_id` INT UNSIGNED NOT NULL,
+    `quantity` INT UNSIGNED NOT NULL DEFAULT 0,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `product_color_size` (`product_id`, `color_id`, `size_id`),
+    CONSTRAINT `variants_product_fk` FOREIGN KEY (`product_id`)
+        REFERENCES `products` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `variants_color_fk` FOREIGN KEY (`color_id`)
+        REFERENCES `colors` (`id`),
+    CONSTRAINT `variants_size_fk` FOREIGN KEY (`size_id`)
+        REFERENCES `sizes` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE IF NOT EXISTS photos (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, product_id INT UNSIGNED NOT NULL, color_id INT UNSIGNED NULL, path VARCHAR(255) NOT NULL, position INT NOT NULL, UNIQUE KEY product_position(product_id,position), FOREIGN KEY(product_id) REFERENCES products(id) ON DELETE CASCADE, FOREIGN KEY(color_id) REFERENCES colors(id)) ENGINE=InnoDB;
