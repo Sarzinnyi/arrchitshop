@@ -1,0 +1,21 @@
+.register{
+	display:flex;
+	align-items:center;
+	text-align:center;
+}
+.registerbox input{
+	width:22vw;
+	border-radius:1vw;
+	height:5vh;
+	margin-top:1vh;
+    padding-left:2vw;
+}
+.registerbox .name{
+	width:9.8vw;
+}
+.registerbox{
+	flex:1;
+}
+.tologin{
+	flex:1;
+}

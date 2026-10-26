@@ -1,0 +1,11 @@
+table{
+	border-collapse:collapse;
+	width:100%;
+}
+tbody>tr:hover {
+	background:#c7c7c7;
+}
+tbody>tr img{
+	width:50px;
+	height:50px;
+}

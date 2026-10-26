@@ -1,0 +1,47 @@
+.addnewbox input{
+	width:20vw;
+	height:5vh;
+	border-radius:1vw;
+	margin-top:2vh;
+	padding-left:2vw;
+}
+.addnew{
+
+}
+.addnewhead{
+	font-size:2rem;
+	padding:20px;
+	font-weight:bold;
+}
+.wrap{
+	display:flex;
+	
+}
+.addnewleft{
+	flex:1;
+	text-align:center;
+}
+.addnewright{
+	flex:1;
+}
+.addnewinput{
+	display:flex;
+	margin-top:1vw;
+	align-items:center;
+}
+.addnewinputleft{
+	width:20vw;
+}
+.addnewinput>input{
+	height:40px;
+	border-radius:1vw;
+	padding-left:2vw;
+}
+.sizesboxwrap{
+	display:flex;
+	
+}
+.sizeitem>input{
+	width:50px;
+	font-size:2rem;
+}
